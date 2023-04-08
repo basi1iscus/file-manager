@@ -7,7 +7,7 @@ import { fileExist } from "./fs-cmd.js";
 import { createBrotliCompress, createBrotliDecompress } from "node:zlib";
 
 export const hash = async (workingDirectory, [fileName]) => {
-  const fullName = path.join(workingDirectory, file);
+  const fullName = path.join(workingDirectory, fileName);
   if (!(await fileExist(fullName))) {
     throw Error(`File not exist`);
   }
@@ -17,11 +17,11 @@ export const hash = async (workingDirectory, [fileName]) => {
     const hash = createHash("sha256");
     hash.setEncoding("hex");
     fileHandle
-      .createReadStream(file)
+      .createReadStream()
       .on("close", () => {
         hash.end();
         const hashHex = hash.read();
-        console.log(`Hash of ${file} is\n${hashHex}`);
+        console.log(`\x1b[32mHash of ${fileName} is\n${hashHex}`);
         resolve(hashHex);
       })
       .on("error", (err) => {
@@ -49,7 +49,7 @@ export const compress = async (workingDirectory, [fileName, zipName]) => {
   const des = zipHandle.createWriteStream();
 
   return pipeline(src, zip, des).then(() =>
-    console.log(`${fileName} successfully compressed to ${zipName}`)
+    console.log(`\x1b[32m${fileName} successfully compressed to ${zipName}`)
   );
 };
 
@@ -71,6 +71,6 @@ export const decompress = async (workingDirectory, [zipName, fileName]) => {
   const des = fileHandle.createWriteStream();
 
   return pipeline(src, dzip, des).then(() =>
-    console.log(`${zipName} successfully decompressed to ${fileName}`)
+    console.log(`\x1b[32m${zipName} successfully decompressed to ${fileName}`)
   );
 };

@@ -1,6 +1,7 @@
 import path from "node:path";
 import fs from "node:fs/promises";
 import { constants } from "node:fs";
+import { pipeline } from "node:stream/promises";
 
 export const fileExist = async (fileName) => {
   return fs
@@ -56,7 +57,7 @@ export const cat = async (workingDirectory, [file]) => {
       fileHandle
         .createReadStream()
         .on("close", () => {
-          resolve(true);
+          resolve();
         })
         .on("error", (err) => {
           reject(err);
@@ -71,27 +72,33 @@ export const cat = async (workingDirectory, [file]) => {
   }
 };
 
-export const add = async (workingDirectory, [file]) => {
-  const fileName = path.join(workingDirectory, file);
-  if (!(await fileExist(fileName))) {
-    fs.writeFile(fileName, "");
-    return fileName;
+export const add = async (workingDirectory, [fileName]) => {
+  const file = path.join(workingDirectory, fileName);
+  if (!(await fileExist(file))) {
+    return fs
+      .writeFile(file, "")
+      .then(() => console.log(`\x1b[32m${file} successfully created`));
   } else {
-    throw Error(`File exist`);
+    throw Error(`Same file exist`);
   }
 };
 
-export const rn = async (workingDirectory, [oldName, newName]) => {
-  const oldFile = path.join(workingDirectory, oldName);
-  const newFile = path.join(workingDirectory, newName);
+export const rn = async (workingDirectory, [oldFileName, newFileName]) => {
+  const oldFile = path.join(workingDirectory, oldFileName);
+  const newFile = path.join(workingDirectory, newFileName);
   if (!(await fileExist(oldFile))) {
     throw Error(`File not exist`);
   } else if (await fileExist(newFile)) {
     throw Error(`New file exist`);
   }
 
-  fs.rename(oldFile, newFile);
-  return newFile;
+  return fs
+    .rename(oldFile, newFile)
+    .then(() =>
+      console.log(
+        `\x1b[32m${oldFileName} successfully renamed to ${newFileName}`
+      )
+    );
 };
 
 export const cp = async (workingDirectory, [oldFileName, newFileName]) => {
@@ -103,23 +110,15 @@ export const cp = async (workingDirectory, [oldFileName, newFileName]) => {
     throw Error(`New file exist`);
   }
 
-  return new Promise(async (resolve, reject) => {
-    const oldFileHandle = await fs.open(oldFile);
-    const newFileHandle = await fs.open(newFile, "w");
-    oldFileHandle
-      .createReadStream()
-      .on("close", () => {
-        resolve(true);
-      })
-      .on("error", (err) => {
-        reject(err);
-      })
-      .pipe(
-        newFileHandle.createWriteStream().on("error", (err) => {
-          reject(err);
-        })
-      );
-  });
+  const oldHandle = await fs.open(oldFile);
+  const newHandle = await fs.open(newFile, "w");
+
+  const src = oldHandle.createReadStream();
+  const des = newHandle.createWriteStream();
+
+  return pipeline(src, des).then(() =>
+    console.log(`\x1b[32m${oldFileName} successfully copied to ${newFileName}`)
+  );
 };
 
 export const mv = async (workingDirectory, [oldFileName, newFileName]) => {
@@ -131,24 +130,15 @@ export const mv = async (workingDirectory, [oldFileName, newFileName]) => {
     throw Error(`New file exist`);
   }
 
-  return new Promise(async (resolve, reject) => {
-    const oldFileHandle = await fs.open(oldFile);
-    const newFileHandle = await fs.open(newFile, "w");
-    oldFileHandle
-      .createReadStream()
-      .on("close", () => {
-        resolve(true);
-      })
-      .on("error", (err) => {
-        reject(err);
-      })
-      .pipe(
-        newFileHandle.createWriteStream().on("error", (err) => {
-          reject(err);
-        })
-      );
-  }).then(() => {
+  const oldHandle = await fs.open(oldFile);
+  const newHandle = await fs.open(newFile, "w");
+
+  const src = oldHandle.createReadStream();
+  const des = newHandle.createWriteStream();
+
+  return pipeline(src, des).then(() => {
     fs.rm(oldFile);
+    console.log(`\x1b[32m${oldFileName} successfully moved to ${newFileName}`);
   });
 };
 
@@ -158,6 +148,7 @@ export const rm = async (workingDirectory, [file]) => {
     throw Error(`File not exist`);
   }
 
-  fs.rm(fileName);
-  return fileName;
+  return fs
+    .rm(fileName)
+    .then(() => console.log(`\x1b[32m${file} successfully deleted`));
 };
