@@ -1,6 +1,7 @@
 import os from "node:os";
 import * as ReadLine from "node:readline/promises";
 import * as fsCmd from "./fs-cmd.js";
+import * as osCmd from "./os-cmd.js";
 import * as utilsCmd from "./utils-cmd.js";
 
 let workingDirectory = os.homedir();
@@ -18,7 +19,7 @@ const fsCommandMap = {
 };
 
 const osCommandMap = {
-  os: (param) => {},
+  os: osCmd.osCmd,
 };
 
 const utilsCommandMap = {
@@ -35,7 +36,7 @@ const parseArgs = () => {
         try {
           acc[key.slice(2)] = value ?? "";
         } catch {
-          console.log(`Incorrect argument ${key}`);
+          console.error(`\x1b[91mIncorrect argument ${key}`);
         }
       }
     }
@@ -46,7 +47,7 @@ const parseArgs = () => {
 };
 
 const waitCommand = async (rl) => {
-  console.log(`You are currently in ${workingDirectory}`);
+  console.log(`\x1b[34mYou are currently in ${workingDirectory}\x1b[97m`);
   for await (const commandLine of rl) {
     const [command, ...args] = commandLine
       .trim()
@@ -55,27 +56,30 @@ const waitCommand = async (rl) => {
 
     if (typeof fsCommandMap[command] !== "undefined") {
       try {
-        await fsCommandMap[command](workingDirectory, args);
+        const answer = await fsCommandMap[command](workingDirectory, args);
+        if (typeof answer === "string") {
+          workingDirectory = answer;
+        }
       } catch {
-        console.log(`Invalid input`);
+        console.error(`\x1b[91mInvalid input`);
       }
     } else if (typeof osCommandMap[command] !== "undefined") {
       try {
         await osCommandMap[command](args);
       } catch {
-        console.log(`Invalid input`);
+        console.error(`\x1b[91mInvalid input`);
       }
     } else if (typeof utilsCommandMap[command] !== "undefined") {
       try {
         await utilsCommandMap[command](workingDirectory, args);
       } catch {
-        console.log(`Invalid input`);
+        console.error(`\x1b[91mInvalid input`);
       }
     } else {
-      console.log(`Invalid input`);
+      console.error(`\x1b[91mInvalid input`);
     }
 
-    console.log(`You are currently in ${workingDirectory}`);
+    console.log(`\x1b[34mYou are currently in ${workingDirectory}\x1b[97m`);
   }
 };
 
@@ -84,7 +88,7 @@ const userName = args.username
   ? args.username.charAt(0).toUpperCase() + args.username.slice(1)
   : "unknown";
 
-console.log(`Welcome to the File Manager, ${userName}!`);
+console.log(`\x1b[33mWelcome to the File Manager, ${userName}!`);
 
 const rl = ReadLine.createInterface({
   input: process.stdin,
@@ -95,5 +99,7 @@ waitCommand(rl);
 process.on("SIGINT", () => {
   rl.close();
   console.log();
-  console.log(`Thank you for using File Manager, ${userName}, goodbye!`);
+  console.log(
+    `\x1b[33mThank you for using File Manager, ${userName}, goodbye!\x1b[97m`
+  );
 });
