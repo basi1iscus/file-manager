@@ -1,0 +1,25 @@
+{
+  "name": "file-manager",
+  "version": "1.0.0",
+  "description": "Cli file manager for nodejs",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/basi1iscus/file-manager.git"
+  },
+  "keywords": [
+    "file",
+    "manager",
+    "nodejs"
+  ],
+  "author": "Vasyl Kaminnyi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/basi1iscus/file-manager/issues"
+  },
+  "homepage": "https://github.com/basi1iscus/file-manager#readme"
+}
