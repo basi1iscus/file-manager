@@ -10,45 +10,6 @@ export const fileExist = async (fileName) => {
     .catch(() => false);
 };
 
-export const up = (workingDirectory) => {
-  const currentDir = path.dirname(workingDirectory);
-  workingDirectory = currentDir;
-  return workingDirectory;
-};
-
-export const cd = async (workingDirectory, [dir]) => {
-  const newDir = path.join(workingDirectory, dir);
-  try {
-    if ((await fs.stat(newDir)).isDirectory()) {
-      workingDirectory = newDir;
-      return workingDirectory;
-    } else {
-      throw Error(`${dir} is not directory`);
-    }
-  } catch {
-    throw Error(`Error changing directory`);
-  }
-};
-
-export const ls = async (workingDirectory) => {
-  try {
-    const dirContent = await fs
-      .readdir(workingDirectory, { withFileTypes: true })
-      .then((direntArr) =>
-        direntArr.map((dirent) => {
-          return {
-            Name: dirent.name,
-            Type: dirent.isDirectory() ? "directory" : "file",
-          };
-        })
-      );
-
-    console.table(dirContent);
-  } catch {
-    throw Error(`Error getting directory content`);
-  }
-};
-
 export const cat = async (workingDirectory, [file]) => {
   const fileName = path.join(workingDirectory, file);
   if (await fileExist(fileName)) {
