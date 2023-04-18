@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { pipeline } from "node:stream/promises";
 
-import { fileExist } from "./fs-cmd.js";
+import { fileExist } from "./fs.js";
 import { createBrotliCompress, createBrotliDecompress } from "node:zlib";
 
 export const hash = async (workingDirectory, [fileName]) => {
