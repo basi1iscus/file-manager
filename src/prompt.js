@@ -11,7 +11,10 @@ export const waitCommand = async (rl, exit) => {
 
     if (typeof commandsMap[command] !== "undefined") {
       try {
-        const newDirectory = await commandsMap[command](workingDirectory, args);
+        const result = await commandsMap[command](workingDirectory, args);
+        if (result instanceof Error) {
+          throw result;
+        }
         if (typeof newDirectory === "string") {
           workingDirectory = newDirectory;
         }

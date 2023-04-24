@@ -43,13 +43,13 @@ export const osCmd = async (_, [osCmd, ...restArg]) => {
     "--architecture": architecture,
   };
 
-  if (typeof osMap[arg] !== "undefined") {
-    try {
-      osMap[arg]();
-    } catch (err) {
-      throw Error(errorsMsg.operationFailed);
-    }
+  if (typeof osMap[osCmd] === "undefined") {
+    throw Error(errorsMsg.invalidInput);
   }
-
-  throw Error(errorsMsg.invalidInput);
+  try {
+    osMap[osCmd]();
+    return;
+  } catch (err) {
+    throw Error(errorsMsg.operationFailed);
+  }
 };

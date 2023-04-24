@@ -63,9 +63,9 @@ export const decompress = async (
     const src = zipHandle.createReadStream();
     const des = fileHandle.createWriteStream();
 
-    return pipeline(src, dzip, des).then(() =>
-      info(`${zipName} successfully decompressed to ${fileName}`)
-    );
+    return pipeline(src, dzip, des)
+      .then(() => info(`${zipName} successfully decompressed to ${fileName}`))
+      .catch((err) => Error(errorsMsg.operationFailed));
   } catch (err) {
     throw Error(errorsMsg.operationFailed);
   }
