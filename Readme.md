@@ -9,7 +9,7 @@
 
 ### 2. There aren\`t external dependencies you don\`t need to use npm install
 
-### 3. Change branch to dev:
+### 3. Change branch to dev (optional):
 
   ```shell
   git checkout dev
