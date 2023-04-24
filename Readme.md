@@ -9,16 +9,11 @@
 
 ### 2. There aren\`t external dependencies you don\`t need to use npm install
 
-### 3. Change branch to dev (optional):
+### 3. Use the following commands to run File Manager
 
-  ```shell
-  git checkout dev
-  ```
-### 4. Use the following commands to run File Manager
+npm run start -- --username=\<your username\>
 
-npm run start --username=\<your username\>
-
-### 5. List of operations and their syntax
+### 4. List of operations and their syntax
 #### Navigation & working directory (nwd)
 up
 

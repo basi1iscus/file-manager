@@ -14,7 +14,7 @@ export const prompt = (message) => {
 };
 
 export const greetings = (message) => {
-  console.log(`${colors.greetings}${message}`);
+  console.log(`${colors.greetings}${message}${colors.command}`);
 };
 
 export const getFileName = (currentDir, fileName) => {
