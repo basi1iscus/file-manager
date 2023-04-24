@@ -16,33 +16,47 @@
   ```
 ### 4. Use the following commands to run File Manager
 
-npm run start --username=<your username>
+npm run start --username=\<your username\>
 
 ### 5. List of operations and their syntax
-####Navigation & working directory (nwd)
+#### Navigation & working directory (nwd)
 up
+
 cd path_to_directory
+
 ls
 
-####Basic operations with files
+#### Basic operations with files
 cat path_to_file
+
 add new_file_name
+
 rn path_to_file new_filename
+
 cp path_to_file path_to_new_directory
+
 mv path_to_file path_to_new_directory
+
 rm path_to_file
 
-####Operating system info (prints following information in console)
+#### Operating system info (prints following information in console)
 
 os --EOL
+
 os --cpus
+
 os --homedir
+
 os --username
+
 os --architecture
 
-####Hash calculation
+#### Hash calculation
+
 hash path_to_file
 
-####Compress and decompress operations
+#### Compress and decompress operations
+
 compress path_to_file path_to_destination
+
 decompress path_to_file path_to_destination
