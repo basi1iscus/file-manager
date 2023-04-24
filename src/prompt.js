@@ -15,8 +15,8 @@ export const waitCommand = async (rl, exit) => {
         if (result instanceof Error) {
           throw result;
         }
-        if (typeof newDirectory === "string") {
-          workingDirectory = newDirectory;
+        if (typeof result === "string") {
+          workingDirectory = result;
         }
       } catch (err) {
         error(err.message);

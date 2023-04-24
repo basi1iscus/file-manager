@@ -11,7 +11,7 @@
 
 ### 3. Use the following commands to run File Manager
 
-npm run start --username=\<your username\>
+npm run start -- --username=\<your username\>
 
 ### 4. List of operations and their syntax
 #### Navigation & working directory (nwd)

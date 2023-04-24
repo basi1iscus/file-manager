@@ -50,9 +50,9 @@ export const decompress = async (
   const fullZipName = getFileName(workingDirectory, zipName);
 
   if (await fileExist(fullFileName)) {
-    throw Error(`${errorsMsg.operationFailed}: File not exist`);
+    throw Error(`${errorsMsg.operationFailed}: New not exist`);
   } else if (!(await fileExist(fullZipName))) {
-    throw Error(`${errorsMsg.operationFailed}: New file exist`);
+    throw Error(`${errorsMsg.operationFailed}: Compressed file not exist`);
   }
 
   try {
@@ -65,7 +65,10 @@ export const decompress = async (
 
     return pipeline(src, dzip, des)
       .then(() => info(`${zipName} successfully decompressed to ${fileName}`))
-      .catch((err) => Error(errorsMsg.operationFailed));
+      .catch((err) => {
+        fs.rm(fullFileName).catch((err) => Error(errorsMsg.operationFailed));
+        return Error(errorsMsg.operationFailed);
+      });
   } catch (err) {
     throw Error(errorsMsg.operationFailed);
   }
