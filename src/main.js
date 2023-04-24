@@ -1,6 +1,8 @@
 import * as ReadLine from "node:readline/promises";
 
-import { waitCommand } from "./console-prompt.js";
+import { waitCommand } from "./prompt.js";
+import { greetings, error } from "./utils.js";
+import { errorsMsg } from "./config.js";
 
 const parseArgs = () => {
   const args = process.argv.reduce((acc, item) => {
@@ -10,7 +12,7 @@ const parseArgs = () => {
         try {
           acc[key.slice(2)] = value ?? "";
         } catch {
-          console.error(`\x1b[91mIncorrect argument ${key}`);
+          error(`${errorsMsg.incorrectArgument} ${key}`);
         }
       }
     }
@@ -25,19 +27,18 @@ const userName = args.username
   ? args.username.charAt(0).toUpperCase() + args.username.slice(1)
   : "unknown";
 
-console.log(`\x1b[33mWelcome to the File Manager, ${userName}!`);
+greetings(`Welcome to the File Manager, ${userName}!`);
 
 const rl = ReadLine.createInterface({
   input: process.stdin,
 });
 
-waitCommand(rl, exit);
+waitCommand(rl);
 
-function exit() {
+export function exit() {
   rl.close();
-  console.log(
-    `\x1b[33mThank you for using File Manager, ${userName}, goodbye!\x1b[97m`
-  );
+  greetings(`Thank you for using File Manager, ${userName}, goodbye!`);
+  process.exit(0);
 }
 
 process.on("SIGINT", () => {

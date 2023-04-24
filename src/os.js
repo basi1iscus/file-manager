@@ -1,33 +1,40 @@
 import os from "node:os";
 
+import { info } from "./utils.js";
+import { errorsMsg } from "./config.js";
+
 const eol = () => {
   const eolDesciption = os.EOL.split("")
     .map((s) => `<${s.charCodeAt(0)}>`)
     .join("");
-  console.log(`\x1b[32mDefault system End-Of-Line is ${eolDesciption}`);
+  info(`Default system End-Of-Line is ${eolDesciption}`);
 };
 
 const homedir = () => {
-  console.log(`\x1b[32mHome directory is ${os.homedir}`);
+  info(`Home directory is ${os.homedir}`);
 };
 
 const username = () => {
-  console.log(`\x1b[32mSystem user name is ${os.userInfo().username}`);
+  info(`System user name is ${os.userInfo().username}`);
 };
 
 const cpus = () => {
   const cpuArr = os.cpus();
-  console.log(`\x1b[32mThere are ${cpuArr.length} overall cpus`);
+  info(`There are ${cpuArr.length} overall cpus`);
   cpuArr.forEach((cpu) => {
-    console.log(`Model: ${cpu.model}, clock rate: ${cpu.speed / 1000} GHz`);
+    info(`Model: ${cpu.model}, clock rate: ${cpu.speed / 1000} GHz`);
   });
 };
 
 const architecture = () => {
-  console.log(`\x1b[32mNode.js binary architecture is ${os.arch}`);
+  info(`Node.js binary architecture is ${os.arch}`);
 };
 
-export const osCmd = async ([arg]) => {
+export const osCmd = async (_, [osCmd, ...restArg]) => {
+  if (restArg.length !== 0 || !osCmd) {
+    throw Error(errorsMsg.invalidInput);
+  }
+
   const osMap = {
     "--EOL": eol,
     "--cpus": cpus,
@@ -38,11 +45,11 @@ export const osCmd = async ([arg]) => {
 
   if (typeof osMap[arg] !== "undefined") {
     try {
-      return osMap[arg]();
+      osMap[arg]();
     } catch (err) {
-      throw Error(`Error ${err.message}`);
+      throw Error(errorsMsg.operationFailed);
     }
   }
 
-  throw Error(`Invalid argument {$arg}`);
+  throw Error(errorsMsg.invalidInput);
 };

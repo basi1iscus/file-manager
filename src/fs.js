@@ -1,7 +1,9 @@
-import path from "node:path";
 import fs from "node:fs/promises";
 import { constants } from "node:fs";
 import { pipeline } from "node:stream/promises";
+
+import { info, getFileName } from "./utils.js";
+import { errorsMsg } from "./config.js";
 
 export const fileExist = async (fileName) => {
   return fs
@@ -10,106 +12,145 @@ export const fileExist = async (fileName) => {
     .catch(() => false);
 };
 
-export const cat = async (workingDirectory, [file]) => {
-  const fileName = path.join(workingDirectory, file);
-  if (await fileExist(fileName)) {
-    return new Promise(async (resolve, reject) => {
-      const fileHandle = await fs.open(fileName);
-      fileHandle
-        .createReadStream()
-        .on("close", () => {
-          resolve();
-        })
-        .on("error", (err) => {
-          reject(err);
-        })
-        .pipe(process.stdout)
-        .on("error", (err) => {
-          reject(err);
-        });
-    });
-  } else {
-    throw Error(`Error changing directory`);
+export const cat = async (workingDirectory, [fileName, ...restArg]) => {
+  if (restArg.length !== 0 || !fileName) {
+    throw Error(errorsMsg.invalidInput);
   }
-};
-
-export const add = async (workingDirectory, [fileName]) => {
-  const file = path.join(workingDirectory, fileName);
+  const file = getFileName(workingDirectory, fileName);
   if (!(await fileExist(file))) {
-    return fs
-      .writeFile(file, "")
-      .then(() => console.log(`\x1b[32m${file} successfully created`));
-  } else {
-    throw Error(`Same file exist`);
+    throw Error(`${errorsMsg.operationFailed}: File not exist`);
   }
+  return new Promise((resolve, reject) => {
+    const fileHandle = fs
+      .open(file)
+      .then((fileHandle) =>
+        fileHandle
+          .createReadStream()
+          .on("close", () => {
+            console.log();
+            resolve();
+          })
+          .on("error", (err) => {
+            reject(Error(errorsMsg.operationFailed));
+          })
+          .pipe(process.stdout)
+          .on("error", (err) => {
+            reject(Error(errorsMsg.operationFailed));
+          })
+      )
+      .catch((err) => reject(Error(errorsMsg.operationFailed)));
+  });
 };
 
-export const rn = async (workingDirectory, [oldFileName, newFileName]) => {
-  const oldFile = path.join(workingDirectory, oldFileName);
-  const newFile = path.join(workingDirectory, newFileName);
+export const add = async (workingDirectory, [fileName, ...restArg]) => {
+  if (restArg.length !== 0 || !fileName) {
+    throw Error(errorsMsg.invalidInput);
+  }
+  const file = getFileName(workingDirectory, fileName);
+  if (await fileExist(file)) {
+    throw Error(`${errorsMsg.operationFailed}: ${fileName} already exist`);
+  }
+  return fs
+    .writeFile(file, "")
+    .then(() => info(`${fileName} successfully created`))
+    .catch((err) => Error(errorsMsg.operationFailed));
+};
+
+export const rn = async (
+  workingDirectory,
+  [oldFileName, newFileName, ...restArg]
+) => {
+  if (restArg.length !== 0 || !oldFileName || !newFileName) {
+    throw Error(errorsMsg.invalidInput);
+  }
+
+  const oldFile = getFileName(workingDirectory, oldFileName);
+  const newFile = getFileName(workingDirectory, newFileName);
+
   if (!(await fileExist(oldFile))) {
-    throw Error(`File not exist`);
+    throw Error(`${errorsMsg.operationFailed}: File not exist`);
   } else if (await fileExist(newFile)) {
-    throw Error(`New file exist`);
+    throw Error(`${errorsMsg.operationFailed}: New file exist`);
   }
 
   return fs
     .rename(oldFile, newFile)
-    .then(() =>
-      console.log(
-        `\x1b[32m${oldFileName} successfully renamed to ${newFileName}`
-      )
+    .then(() => info(`${oldFileName} successfully renamed to ${newFileName}`))
+    .catch((err) => Error(errorsMsg.operationFailed));
+};
+
+export const cp = async (
+  workingDirectory,
+  [oldFileName, newFileName, ...restArg]
+) => {
+  if (restArg.length !== 0 || !oldFileName || !newFileName) {
+    throw Error(errorsMsg.invalidInput);
+  }
+  const oldFile = getFileName(workingDirectory, oldFileName);
+  const newFile = getFileName(workingDirectory, newFileName);
+  if (!(await fileExist(oldFile))) {
+    throw Error(`${errorsMsg.operationFailed}: File not exist`);
+  } else if (await fileExist(newFile)) {
+    throw Error(`${errorsMsg.operationFailed}: New file exist`);
+  }
+
+  try {
+    const oldHandle = await fs.open(oldFile);
+    const newHandle = await fs.open(newFile, "w");
+
+    const src = oldHandle.createReadStream();
+    const des = newHandle.createWriteStream();
+
+    await pipeline(src, des).then(() =>
+      info(`${oldFileName} successfully copied to ${newFileName}`)
     );
+  } catch (err) {
+    throw Error(errorsMsg.operationFailed);
+  }
 };
 
-export const cp = async (workingDirectory, [oldFileName, newFileName]) => {
-  const oldFile = path.join(workingDirectory, oldFileName);
-  const newFile = path.join(workingDirectory, newFileName);
+export const mv = async (
+  workingDirectory,
+  [oldFileName, newFileName, ...restArg]
+) => {
+  if (restArg.length !== 0 || !oldFileName || !newFileName) {
+    throw Error(errorsMsg.invalidInput);
+  }
+  const oldFile = getFileName(workingDirectory, oldFileName);
+  const newFile = getFileName(workingDirectory, newFileName);
   if (!(await fileExist(oldFile))) {
-    throw Error(`File not exist`);
+    throw Error(`${errorsMsg.operationFailed}: File not exist`);
   } else if (await fileExist(newFile)) {
-    throw Error(`New file exist`);
+    throw Error(`${errorsMsg.operationFailed}: New file exist`);
   }
 
-  const oldHandle = await fs.open(oldFile);
-  const newHandle = await fs.open(newFile, "w");
+  try {
+    const oldHandle = await fs.open(oldFile);
+    const newHandle = await fs.open(newFile, "w");
 
-  const src = oldHandle.createReadStream();
-  const des = newHandle.createWriteStream();
+    const src = oldHandle.createReadStream();
+    const des = newHandle.createWriteStream();
 
-  return pipeline(src, des).then(() =>
-    console.log(`\x1b[32m${oldFileName} successfully copied to ${newFileName}`)
-  );
-};
-
-export const mv = async (workingDirectory, [oldFileName, newFileName]) => {
-  const oldFile = path.join(workingDirectory, oldFileName);
-  const newFile = path.join(workingDirectory, newFileName);
-  if (!(await fileExist(oldFile))) {
-    throw Error(`File not exist`);
-  } else if (await fileExist(newFile)) {
-    throw Error(`New file exist`);
+    await pipeline(src, des).then(() => {
+      fs.rm(oldFile);
+      info(`${oldFileName} successfully moved to ${newFileName}`);
+    });
+  } catch (err) {
+    throw Error(errorsMsg.operationFailed);
   }
-
-  const oldHandle = await fs.open(oldFile);
-  const newHandle = await fs.open(newFile, "w");
-
-  const src = oldHandle.createReadStream();
-  const des = newHandle.createWriteStream();
-
-  return pipeline(src, des).then(() => {
-    fs.rm(oldFile);
-    console.log(`\x1b[32m${oldFileName} successfully moved to ${newFileName}`);
-  });
 };
 
-export const rm = async (workingDirectory, [file]) => {
-  const fileName = path.join(workingDirectory, file);
-  if (!(await fileExist(fileName))) {
-    throw Error(`File not exist`);
+export const rm = async (workingDirectory, [fileName, ...restArg]) => {
+  if (restArg.length !== 0 || !fileName) {
+    throw Error(errorsMsg.invalidInput);
+  }
+  const file = getFileName(workingDirectory, fileName);
+  if (!(await fileExist(file))) {
+    throw Error(`${errorsMsg.operationFailed}: File not exist`);
   }
 
   return fs
-    .rm(fileName)
-    .then(() => console.log(`\x1b[32m${file} successfully deleted`));
+    .rm(file)
+    .then(() => info(`${fileName} successfully deleted`))
+    .catch((err) => Error(errorsMsg.operationFailed));
 };

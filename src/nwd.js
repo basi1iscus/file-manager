@@ -1,34 +1,43 @@
 import path from "node:path";
 import fs from "node:fs/promises";
 
+import { getFileName } from "./utils.js";
+import { fileExist } from "./fs.js";
+import { errorsMsg } from "./config.js";
+
 export const up = (workingDirectory, restArg) => {
   if (restArg.length !== 0) {
-    throw Error(`Invalid input`);
+    throw Error(errorsMsg.invalidInput);
   }
   return path.dirname(workingDirectory);
 };
 
 export const cd = async (workingDirectory, [dir, ...restArg]) => {
-  if (restArg.length !== 0) {
-    throw Error(`Invalid input`);
+  if (restArg.length !== 0 || !dir) {
+    throw Error(errorsMsg.invalidInput);
   }
-  const newDir = path.join(workingDirectory, dir);
+
+  const newDir = getFileName(workingDirectory, dir);
   try {
     if ((await fs.stat(newDir)).isDirectory()) {
       return newDir;
-    } else {
-      throw Error(`Operation failed`);
     }
+    throw Error(errorsMsg.operationFailed);
   } catch {
-    throw Error(`Operation failed`);
+    throw Error(errorsMsg.operationFailed);
   }
 };
 
-export const ls = async (workingDirectory, restArg) => {
+export const ls = async (workingDirectory, [dir, ...restArg]) => {
   if (restArg.length !== 0) {
-    throw Error(`Invalid input`);
+    throw Error(errorsMsg.invalidInput);
   }
   try {
+    if (dir) {
+      if (!fileExist((workingDirectory = getFileName(workingDirectory, dir)))) {
+        throw Error(`${errorsMsg.operationFailed}: Dir not found`);
+      }
+    }
     const dirContent = await fs
       .readdir(workingDirectory, { withFileTypes: true })
       .then((direntArr) =>
@@ -49,9 +58,9 @@ export const ls = async (workingDirectory, restArg) => {
       );
 
     console.table(dirContent);
-
-    return workingDirectory;
   } catch (err) {
-    throw Error(`Error getting directory content`);
+    throw Error(
+      `${errorsMsg.operationFailed}: Error getting directory content`
+    );
   }
 };

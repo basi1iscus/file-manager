@@ -1,76 +1,72 @@
-import path from "node:path";
 import fs from "node:fs/promises";
-import { createHash } from "node:crypto";
 import { pipeline } from "node:stream/promises";
-
-import { fileExist } from "./fs.js";
 import { createBrotliCompress, createBrotliDecompress } from "node:zlib";
 
-export const hash = async (workingDirectory, [fileName]) => {
-  const fullName = path.join(workingDirectory, fileName);
-  if (!(await fileExist(fullName))) {
-    throw Error(`File not exist`);
+import { fileExist } from "./fs.js";
+import { info, getFileName } from "./utils.js";
+import { errorsMsg } from "./config.js";
+
+export const compress = async (
+  workingDirectory,
+  [fileName, zipName, ...restArg]
+) => {
+  if (restArg.length !== 0 || !fileName || !zipName) {
+    throw Error(errorsMsg.invalidInput);
   }
 
-  return new Promise(async (resolve, reject) => {
-    const fileHandle = await fs.open(fullName);
-    const hash = createHash("sha256");
-    hash.setEncoding("hex");
-    fileHandle
-      .createReadStream()
-      .on("close", () => {
-        hash.end();
-        const hashHex = hash.read();
-        console.log(`\x1b[32mHash of ${fileName} is\n${hashHex}`);
-        resolve(hashHex);
-      })
-      .on("error", (err) => {
-        reject(err);
-      })
-      .pipe(hash);
-  });
-};
-
-export const compress = async (workingDirectory, [fileName, zipName]) => {
-  const fullFileName = path.join(workingDirectory, fileName);
-  const fullZipName = path.join(workingDirectory, zipName);
+  const fullFileName = getFileName(workingDirectory, fileName);
+  const fullZipName = getFileName(workingDirectory, zipName);
 
   if (!(await fileExist(fullFileName))) {
-    throw Error(`File not exist`);
+    throw Error(`${errorsMsg.operationFailed}: File not exist`);
   } else if (await fileExist(fullZipName)) {
-    throw Error(`New file exist`);
+    throw Error(`${errorsMsg.operationFailed}: New file exist`);
   }
 
-  const fileHandle = await fs.open(fullFileName);
-  const zipHandle = await fs.open(fullZipName, "w");
-  const zip = createBrotliCompress();
+  try {
+    const fileHandle = await fs.open(fullFileName);
+    const zipHandle = await fs.open(fullZipName, "w");
+    const zip = createBrotliCompress();
 
-  const src = fileHandle.createReadStream();
-  const des = zipHandle.createWriteStream();
+    const src = fileHandle.createReadStream();
+    const des = zipHandle.createWriteStream();
 
-  return pipeline(src, zip, des).then(() =>
-    console.log(`\x1b[32m${fileName} successfully compressed to ${zipName}`)
-  );
+    return pipeline(src, zip, des).then(() =>
+      info(`${fileName} successfully compressed to ${zipName}`)
+    );
+  } catch (err) {
+    throw Error(errorsMsg.operationFailed);
+  }
 };
 
-export const decompress = async (workingDirectory, [zipName, fileName]) => {
-  const fullFileName = path.join(workingDirectory, fileName);
-  const fullZipName = path.join(workingDirectory, zipName);
+export const decompress = async (
+  workingDirectory,
+  [zipName, fileName, ...restArg]
+) => {
+  if (restArg.length !== 0 || !fileName || !zipName) {
+    throw Error(errorsMsg.invalidInput);
+  }
+  const fullFileName = getFileName(workingDirectory, fileName);
+  const fullZipName = getFileName(workingDirectory, zipName);
 
   if (await fileExist(fullFileName)) {
-    throw Error(`File not exist`);
+    throw Error(`${errorsMsg.operationFailed}: File not exist`);
   } else if (!(await fileExist(fullZipName))) {
-    throw Error(`New file exist`);
+    throw Error(`${errorsMsg.operationFailed}: New file exist`);
   }
 
-  const zipHandle = await fs.open(fullZipName);
-  const fileHandle = await fs.open(fullFileName, "w");
-  const dzip = createBrotliDecompress();
+  try {
+    const zipHandle = await fs.open(fullZipName);
+    const fileHandle = await fs.open(fullFileName, "w");
+    const dzip = createBrotliDecompress();
 
-  const src = zipHandle.createReadStream();
-  const des = fileHandle.createWriteStream();
+    const src = zipHandle.createReadStream();
+    const des = fileHandle.createWriteStream();
 
-  return pipeline(src, dzip, des).then(() =>
-    console.log(`\x1b[32m${zipName} successfully decompressed to ${fileName}`)
-  );
+    return pipeline(src, dzip, des).then(() =>
+      info(`${zipName} successfully decompressed to ${fileName}`)
+    );
+  } catch (err) {
+    throw Error(errorsMsg.operationFailed);
+  }
 };
